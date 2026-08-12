@@ -1,0 +1,65 @@
+const express=require("express")
+const taskRouter=express.Router();
+const Task=require("../models/task");
+
+taskRouter.post("/createtask", async(req, res)=>{
+  try{
+    const {title, description, status}=req.body;
+    const task= await Task.findOne({title});
+    if(task){
+      return res.status(400).json({
+        message: "Task already exists",
+      });
+    }
+    const creatingtask=new Task({title, description, status,});
+    await creatingtask.save();
+    res.status(201).json({message: "successfully created a task", data : creatingtask,});
+  }catch(error){
+    res.status(500).json({message: "Internal server error", error: error.message,})
+  }
+})
+
+taskRouter.get("/gettasks", async(req, res)=>{
+  try{
+    const tasks=await Task.find();
+    res.status(200).json({message: "Getting all tasks", data: tasks});
+  }catch(error){
+    res.status(500).json({message: "Internal server error", error: error.message,});
+  }
+})
+
+taskRouter.get("/getstatustasks/:status", async(req, res)=>{
+  try{
+    const {status}=req.params;
+    const updatestatus=status.toLowerCase();
+    const tasks=await Task.find({status});
+    res.status(200).json({message: "Finding task by status", data: tasks});
+  }catch(error){
+    res.status(500).json({message: "Internal server error", data: tasks})
+  }
+})
+taskRouter.patch("/updatetask/:title", async(req, res)=>{
+  try{
+    const {title, description, status}=req.body;
+    const task=await Task.findOne({title});
+    if(!task){
+      return res.status(404).json({message: "No such task available", title: title});
+    }
+    const updatetask=await Task.updateOne({title, description, status})
+    res.status(200).json({message: "Updated task", data: updatetask});
+  }catch(error){
+    res.status(500).json({message: "Internal server error", err: error.message})
+  }
+})
+taskRouter.delete("/deletetask/:title", async(req, res)=>{
+  try{
+    const {title}=req.params;
+    const task=await Task.findOne({title});
+  const deletetask=await Task.deleteOne({title});
+  res.status(200).json({message: "deleted task", task: task})
+  }catch(error){
+    res.status(500).json({message: "unable to delete task", err: error.message});
+  }
+  
+})
+module.exports=taskRouter;
